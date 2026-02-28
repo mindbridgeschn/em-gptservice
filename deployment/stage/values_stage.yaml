@@ -224,7 +224,7 @@ ingress:
         return 302 /docs;
       }
   hosts:
-    - host: stageemqueue.encipherhealth.com
+    - host: stageem.gt.innoura.com
       paths:
         - path: /(.*)
           pathType: Prefix
@@ -233,7 +233,7 @@ ingress:
             port: 8000
   tls:
     - hosts:
-        - stageemqueue.encipherhealth.com
+        - stageem.gt.innoura.com
       secretName: stage-em-queuemanager
 
 # Pod Disruption Budget
