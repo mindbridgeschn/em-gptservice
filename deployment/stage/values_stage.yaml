@@ -213,7 +213,7 @@ ingress:
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-    cert-manager.io/cluster-issuer: stage-em-queuemanager
+    cert-manager.io/cluster-issuer: stage-em-gpt
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     nginx.ingress.kubernetes.io/use-regex: "true"
@@ -228,7 +228,7 @@ ingress:
   tls:
     - hosts:
         - stageem.gt.innoura.com
-      secretName: stage-em-queuemanager
+      secretName: stage-em-gpt
 
 # Pod Disruption Budget
 pdb:
