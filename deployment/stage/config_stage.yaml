@@ -50,7 +50,7 @@ cd:
     manifestFile: deployment/stage/manifest.yaml  # Path to K8s manifest file (used when deploymentMode=manual)
 
   helm:
-    chartPath: /home/cicd-dev/Dev-E-M/dev-e-m  # Path to Helm chart directory (absolute or relative)
+    chartPath: /home/ubuntu/EM-Coding/stage-e-m  # Path to Helm chart directory (absolute or relative)
     valuesFile: deployment/stage/values_stage.yaml       # Helm values file for the given environment
     atomic: true                                 # Perform atomic Helm upgrade (rollback if failure) (true | false)
     timeout: 600s                                # Helm operation timeout (examples: 120s | 300s | 10m)

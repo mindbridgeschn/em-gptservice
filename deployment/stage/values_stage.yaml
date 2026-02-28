@@ -226,7 +226,7 @@ ingress:
   hosts:
     - host: stageem.gt.innoura.com
       paths:
-        - path: /(.*)
+        - path: /
           pathType: Prefix
           service:
             name: queue-service
