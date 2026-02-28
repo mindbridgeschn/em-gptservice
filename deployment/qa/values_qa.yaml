@@ -1,0 +1,313 @@
+# Updated values for DB Service
+# Compatible with enhanced Helm chart templates
+
+# Namespace where resources will be deployed
+namespace: qa-em
+
+# Deployment naming suffix (empty means just Release.Name will be used as suffix)
+deploymentNameSuffix: ""
+
+# Number of replicas (ignored when HPA is enabled)
+replicaCount: 1
+
+# Git metadata labels
+git:
+  author: "{git-author}"
+  commitHash: "{commitHash10}"
+  jenkinsUser: "{jenkins-user}"
+
+# Autoscaling flag (used to control replica count rendering)
+autoscaling:
+  enabled: false
+
+# Horizontal Pod Autoscaler configuration
+hpa:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 2
+  annotations: {}
+  behavior: {}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+# Revision history limit for deployments
+revisionHistoryLimit:
+  enabled: true
+  limit: 6
+
+# Deployment strategy configuration
+strategy:
+  enabled: true
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 25%
+    maxUnavailable: 25%
+
+# Multiple containers support - DISABLED
+containers:
+  enabled: false
+  list: []
+
+# Single container image configuration
+image:
+  repository: myrepo/myapp
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+# Image pull secrets
+imagePullSecrets:
+  - name: acr-secret
+
+# Container security context
+securityContext:
+  enabled: false
+  context: {}
+
+# Pod security context
+podSecurityContext:
+  enabled: false
+  context: {}
+
+# Restart policy for pods
+restartPolicy:
+  enabled: true
+  policy: Always
+
+# Environment variables
+env:
+  enabled: false
+  variables:
+    - name: AZURE_CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: azure-keyvault-secret
+          key: AZURE_CLIENT_ID
+    - name: AZURE_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: azure-keyvault-secret
+          key: AZURE_CLIENT_SECRET
+    - name: AZURE_TENANT_ID
+      valueFrom:
+        secretKeyRef:
+          name: azure-keyvault-secret
+          key: AZURE_TENANT_ID
+
+# Health probes configuration
+probes:
+  liveness:
+    enabled: true
+    config:
+      httpGet:
+        path: /health/liveness
+        port: 8000
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 3
+  readiness:
+    enabled: true
+    config:
+      httpGet:
+        path: /health/readiness
+        port: 8000
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+  startup:
+    enabled: true
+    config:
+      httpGet:
+        path: /health/startup
+        port: 8000
+      initialDelaySeconds: 0
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 30
+
+# Resource limits and requests
+resources:
+  enabled: true
+  config:
+    limits:
+      cpu: "2"
+      memory: 6Gi
+    requests:
+      cpu: "2"
+      memory: 6Gi
+
+# Volume mounts
+volumeMounts:
+  enabled: false
+  mounts:
+    - name: app-volume
+      mountPath: /mnt/data
+
+# Volumes
+volumes:
+  enabled: false
+  volumes:
+    - name: app-volume
+      emptyDir: {}
+
+# Node selector
+nodeSelector:
+  enabled: false
+  labels:
+    cloud.google.com/gke-nodepool: spot-node-pool
+
+# Affinity rules
+affinity:
+  enabled: false
+  config: {}
+
+# Tolerations for pod assignment  <-- UPDATED
+tolerations:
+  enabled: true
+  tolerations:
+    - key: "kubernetes.azure.com/scalesetpriority"
+      operator: "Equal"
+      value: "spot"
+      effect: "NoSchedule"
+    - key: "workload"
+      operator: "Equal"
+      value: "spotworkload"
+      effect: "NoSchedule"
+
+# Service account configuration
+serviceAccount:
+  enabled: false
+  name: ""
+  annotations: {}
+  secrets: []
+  imagePullSecrets: []
+
+# Pod labels
+podLabels: {}
+
+# Pod annotations
+podAnnotations: {}
+
+# Service configuration
+service:
+  enabled: true
+  name: http
+  type: ClusterIP
+  port: 8000
+  targetPort: 8000
+  protocol: TCP
+  annotations:
+    prometheus.io/scrape: "false"
+    prometheus.io/path: "/em/actuator/prometheus"
+    prometheus.io/port: "8085"
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    cert-manager.io/cluster-issuer: qa-em-queuemanager
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header X-Forwarded-Host $host;
+      if ($request_uri = "/") {
+        return 302 /docs;
+      }
+  hosts:
+    - host: qaemqueue.encipherhealth.com
+      paths:
+        - path: /(.*)
+          pathType: Prefix
+          service:
+            name: queue-service
+            port: 8000
+  tls:
+    - hosts:
+        - qaemqueue.encipherhealth.com
+      secretName: qa-em-queuemanager
+
+# Pod Disruption Budget
+pdb:
+  enabled: false
+  annotations: {}
+  minAvailable: 1
+  maxUnavailable: null
+
+# ConfigMap configuration
+configmap:
+  enabled: false
+  annotations: {}
+  data: {}
+
+# PVC configuration
+pvc:
+  enabled: false
+  annotations: {}
+  accessModes:
+    - ReadWriteOnce
+  storage: "10Gi"
+  storageClassName: ""
+  volumeMode: ""
+
+# Secret configuration
+secret:
+  enabled: false
+  annotations: {}
+  type: Opaque
+  data: {}
+
+# HTTPRoute configuration
+httpRoute:
+  enabled: false
+  annotations: {}
+  parentRefs: []
+  hostnames: []
+  rules: []
+
+# ServiceMonitor configuration
+serviceMonitor:
+  enabled: false
+  annotations:
+    prometheus.io/scrape: "true"
+  namespaces:
+    - qa-em
+  endpoints:
+    - port: "http"
+      path: /em/actuator/prometheus
+      interval: 15s
+      scrapeTimeout: 5s
+      scheme: http
+      params: {}
+      relabelings: []
+
+# Init containers configuration
+initContainers:
+  enabled: false
+  defaultSecurityContext: {}
+  containers:
+    - name: init-volume
+      image: busybox
+      command:
+        - "sh"
+        - "-c"
+        - |
+          mkdir -p /mnt/data/gclogs /mnt/data/inputFiles/decrypted /mnt/data/outputFiles && \
+          chmod -R 777 /mnt/data/gclogs /mnt/data/inputFiles /mnt/data/outputFiles
+      volumeMounts:
+        - name: app-volume
+          mountPath: /mnt/data

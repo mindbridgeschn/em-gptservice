@@ -1,0 +1,23 @@
+fastapi
+uvicorn
+python-dotenv
+requests
+redis
+duckdb
+aiohttp
+pandas
+numpy
+pydantic
+pydantic_ai==1.19.0
+ray
+azure-storage-blob
+pypdf
+openai== 2.15.0
+prometheus-client
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-exporter-otlp-proto-grpc
+opentelemetry-instrumentation-fastapi
+opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-redis
+opentelemetry-instrumentation-logging

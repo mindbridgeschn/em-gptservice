@@ -1,0 +1,248 @@
+namespace: em-prod
+deploymentNameSuffix: ""
+replicaCount: 1
+
+# === THIS BLOCK IS REQUIRED - fixes the nil pointer error ===
+containers:
+  enabled: false
+  list: []
+
+git:
+  author: "{git-author}"
+  commitHash: "{commitHash10}"
+  jenkinsUser: "{jenkins-user}"
+
+autoscaling:
+  enabled: false   # you disable global autoscaling, but HPA below still applies
+
+revisionHistoryLimit:
+  enabled: true
+  limit: 6
+
+strategy:
+  enabled: true
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 25%
+    maxUnavailable: 25%
+
+image:
+  repository: myrepo/myapp
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: acr-secret
+
+securityContext:
+  enabled: false
+  context:
+    runAsUser: 0    # production runs as root
+
+podSecurityContext:
+  enabled: false
+  context: {}
+
+restartPolicy:
+  enabled: true
+  policy: Always
+
+env:
+  enabled: false
+  variables:
+    - name: AZURE_CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: azure-keyvault-secret
+          key: AZURE_CLIENT_ID
+    - name: AZURE_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: azure-keyvault-secret
+          key: AZURE_CLIENT_SECRET
+    - name: AZURE_TENANT_ID
+      valueFrom:
+        secretKeyRef:
+          name: azure-keyvault-secret
+          key: AZURE_TENANT_ID
+
+probes:
+  liveness:
+    enabled: true
+    config:
+      httpGet:
+        path: /health/liveness
+        port: 8000
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 3
+  readiness:
+    enabled: true
+    config:
+      httpGet:
+        path: /health/readiness
+        port: 8000
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+  startup:
+    enabled: true
+    config:
+      httpGet:
+        path: /health/startup
+        port: 8000
+      initialDelaySeconds: 0
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 30
+
+resources:
+  enabled: true
+  config:
+    limits:
+      cpu: "2"
+      memory: 6Gi
+    requests:
+      cpu: "2"
+      memory: 6Gi
+
+volumeMounts:
+  enabled: true
+  mounts:
+    - name: app-volume
+      mountPath: /mnt/data
+
+volumes:
+  enabled: true
+  volumes:
+    - name: app-volume
+      emptyDir: {}
+
+initContainers:
+  enabled: false
+  defaultSecurityContext:
+    runAsUser: 0
+  containers:
+    - name: init-volume
+      image: busybox
+      imagePullPolicy: IfNotPresent
+      command: ["sh", "-c"]
+      args:
+        - |
+          mkdir -p /mnt/data/gclogs /mnt/data/em/inputFiles/decrypted /mnt/data/em/outputFiles && \
+          chmod -R 777 /mnt/data/gclogs /mnt/data/em/inputFiles /mnt/data/em/outputFiles
+      volumeMounts:
+        - name: app-volume
+          mountPath: /mnt/data
+
+nodeSelector:
+  enabled: false
+  labels: {}
+
+affinity:
+  enabled: false
+  config: {}
+
+tolerations:
+  enabled: true
+  tolerations:
+    - key: "kubernetes.azure.com/scalesetpriority"
+      operator: "Equal"
+      value: "spot"
+      effect: "NoSchedule"
+    - key: "workload"
+      operator: "Equal"
+      value: "spotworkload"
+      effect: "NoSchedule"
+
+
+serviceAccount:
+  enabled: false
+  name: ""
+
+podLabels: {}
+podAnnotations: {}
+
+service:
+  enabled: true
+  name: http
+  type: ClusterIP
+  port: 8000
+  targetPort: 8000
+  protocol: TCP
+  annotations:
+    prometheus.io/scrape: "false"
+    prometheus.io/path: "/em/actuator/prometheus"
+    prometheus.io/port: "8000"
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    cert-manager.io/cluster-issuer: prod-em-queuemanager
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header X-Forwarded-Host $host;
+      if ($request_uri = "/") {
+        return 302 /docs;
+      }
+  hosts:
+    - host: prod.emqueuemanager.encipherhealth.com
+      paths:
+        - path: /(.*)
+          pathType: Prefix
+          service:
+            name: queue-service
+            port: 8000
+  tls:
+    - hosts:
+        - prod.emqueuemanager.encipherhealth.com
+      secretName: prod-em-queuemanager
+
+hpa:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+pdb:
+  enabled: false
+configmap:
+  enabled: false
+pvc:
+  enabled: false
+secret:
+  enabled: false
+httpRoute:
+  enabled: false
+
+
+serviceMonitor:
+  enabled: false
+  annotations:
+    prometheus.io/scrape: "true"
+  namespaces:
+    - em-prod
+  endpoints:
+    - port: "http"
+      path: /em/actuator/prometheus
+      interval: 15s
+      scrapeTimeout: 5s
+      scheme: http

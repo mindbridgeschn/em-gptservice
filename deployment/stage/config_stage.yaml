@@ -1,0 +1,56 @@
+serviceName: queue-service           # Name of the microservice or component (examples: validator-service | api-gateway | ocr-service)
+
+environment: STAGING              # Deployment environment (options: DEV | QA | STAGING | PREPROD | PRODUCTION)
+namespace: stage-em                   # Kubernetes namespace; pattern: <environment>-<product> (examples: dev-am | qa-am | prod-am)
+
+# Temporal workflow configuration (optional; enable only if service integrates with Temporal)
+temporal:
+  taskQueue:
+    enabled: false                   # Whether Temporal task queue is used (true | false)
+
+ci:
+  language: python                     # Programming language used (options: java | python | node | react)
+  buildTool: pip                   # Build system used (options: maven | gradle | pip | poetry | npm | yarn)
+
+  # Tooling, build, or script-related configuration files
+  configFiles:
+  #    - config/settings.xml            # Example: Maven/Nexus settings.xml (used if needsRepoSecrets=true)
+  #    - src/main/resources/application.properties
+  # Examples for other languages:
+  # - .npmrc                       # Node: NPM registry credentials
+  # - pip.conf                     # Python: pip repository settings
+  #- scripts/init-db.sh             # Optional: database initialization script
+  #- scripts/cronjob.sh             # Optional: scheduled or background job script
+
+  # Application-level configuration or definition files
+  applicationFiles:
+  #- src/main/resources/application.properties   # Java: Spring Boot properties
+  # - src/main/resources/application.yml        # Java: YAML config alternative
+   - requirements.txt                         # Python: dependency file
+  # - package.json                             # Node/React: dependency and build configuration
+
+  executeFiles: false                 # Execute any .sh/.bash/.bin scripts listed in configFiles (true | false)
+  needsRepoSecrets: true             # Whether Nexus/private repo credentials are needed (true | false)
+  runTests: false                     # Run unit/integration tests (true | false)
+  runCodeScan: false                  # Run static code scan (true | false)
+  scanTool: sonar                    # Code scan tool (options: sonar | bandit | flake8 | eslint)
+  coverageThreshold: 80              # Minimum acceptable code coverage percentage (values: 0–100)
+  runJarScan: true                   # For Java only: scan built JAR for vulnerabilities (true | false)
+  triggerCD: true                    # Trigger CD pipeline after successful CI (true | false)
+  enableKeyVaultInjection: false     # Enable secrets injection via Key Vault (true | false)
+
+  dockerLintEnabled: true            # Run hadolint for Dockerfile linting (true | false)
+  dockerScanEnabled: true            # Scan built Docker image for vulnerabilities (true | false)
+
+cd:
+  deployment:
+    isDockerDefault: false            # Use default Dockerfile (Dockerfiletest) if true; otherwise use dockerfileName
+    dockerfileName: stage/Dockerfile # Custom Dockerfile name if isDockerDefault=false
+    deploymentMode: helm           # Deployment method (options: manual | helm)
+    manifestFile: deployment/stage/manifest.yaml  # Path to K8s manifest file (used when deploymentMode=manual)
+
+  helm:
+    chartPath: /home/cicd-dev/Dev-E-M/dev-e-m  # Path to Helm chart directory (absolute or relative)
+    valuesFile: deployment/stage/values_stage.yaml       # Helm values file for the given environment
+    atomic: true                                 # Perform atomic Helm upgrade (rollback if failure) (true | false)
+    timeout: 600s                                # Helm operation timeout (examples: 120s | 300s | 10m)

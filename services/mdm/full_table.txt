@@ -1,0 +1,246 @@
+problems=[
+        # {   
+        #     "name":"self-limited or minor problem",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },    
+        {
+            "name":"stable chronic illness",
+            "value": "yes" if chronic_count != 0 else "no",
+            "count": chronic_count,
+            "exactSentence": chronic_evidence,
+            "page":acute_page
+        },
+        # {
+        #     "name":"acute, uncomplicated illness or injury",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        {
+            "name":"stable acute illness",
+            "value": "yes" if acute_count!=0 or acute_count != None else "no",
+            "count": acute_count,
+            "exactSentence": acute_evidence,
+            "page":chronic_page
+        },
+        # {
+        #     "name":"acute, uncomplicated illness or injury requiring hospital inpatient or observation level of care",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence": "",
+        #     "page":None
+        # },
+        # {
+        #     "name":"chronic illnesses with exacerbation, progression, or side effects of treatment",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        # {
+        #     "name":"undiagnosed new problem with uncertain prognosis",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        # {
+        #     "name":"acute illness with systemic symptoms",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        # {
+        #     "name":"acute complicated injury",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        # {
+        #     "name":"chronic illnesses with severe exacerbation, progression, or side effects of treatment",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        # {
+        #     "name":"acute or chronic illness or injury that poses a threat to life or bodily function",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        
+        {
+            "name": table1_explain, 
+            "value":None,
+            "count":None,
+            "exactSentence":"",
+            "page":None
+        }
+    
+    ]
+    risk=[
+        # {
+        #     "name":"None or Minimal",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        # {
+        #     "name":"Review of prior external note(s) from each unique source",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence": "",
+        #     "page":None
+        # },
+        # {
+        #     "name":"Review of the result(s) of each unique test",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        {
+            "name":"Ordering of each unique test",
+            "value":valueOrder,
+            "count":order_count,
+            "exactSentence": B.get("exactSentence", ""),
+            "page":B.get("pageno", 0)
+        },
+
+        # {
+        #     "name":"Assessment requiring an independent historian(s)",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        # {
+        #     "name":"Independent interpretation of a test performed by another physician/other qualified health care professional (not separately reported)",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        # {
+        #     "name":"Discussion of management or test interpretation with external physician/other qualified health care professional/appropriate source (not separately reported)",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        {
+            "name":table2_explain,
+            "value":None,
+            "count":None,
+            "exactSentence":"",
+            "page":None
+        }
+
+    ]
+
+    condition=[
+
+        # {
+        #     "name":"Minimal risk of morbidity from additional diagnostic testing or treatment",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence": "",
+        #     "page":None
+        # },
+        # {
+        #     "name":"Low risk of morbidity from additional diagnostic testing or treatment",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+
+        {
+            "name":"Prescription drug management",
+            "value": pre_drug,
+            "count":None,
+            "exactSentence": pre_drug_evidence,
+            "page":C.get("pageno", 0)
+        },
+        
+        # {
+        #     "name":"Decision regarding minor surgery with identified patient or procedure risk factors",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        # {
+        #     "name":"Decision regarding elective major surgery without identified patient or procedure risk factors",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        # {
+        #     "name":"Diagnosis or treatment significantly limited by social determinants of health",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        # {
+        #     "name":"Drug therapy requiring intensive monitoring for toxicity",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        # {
+        #     "name":"Decision regarding elective major surgery with identified patient or procedure risk factors",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        # {
+        #     "name":"Decision regarding emergency major surgery",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        # {
+        #     "name":"Decision regarding hospitalization or escalation of hospital-level care",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        # {
+        #     "name":"Decision not to resuscitate or to de-escalate care because of poor prognosis",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        # {
+        #     "name":"Parenteral controlled substances",
+        #     "value":None,
+        #     "count":None,
+        #     "exactSentence":"",
+        #     "page":None
+        # },
+        {
+            "name":table3_explain,
+            "value":None,
+            "count":None,
+            "exactSentence":"",
+            "page":None
+        }
+ 
+    ]
