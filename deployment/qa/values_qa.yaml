@@ -80,23 +80,18 @@ restartPolicy:
 
 # Environment variables
 env:
-  enabled: false
+  enabled: true
   variables:
-    - name: AZURE_CLIENT_ID
+    - name: uuid
       valueFrom:
         secretKeyRef:
-          name: azure-keyvault-secret
-          key: AZURE_CLIENT_ID
-    - name: AZURE_CLIENT_SECRET
+          name: em-gpt-secret
+          key: uuid
+    - name: azure_endpoint
       valueFrom:
         secretKeyRef:
-          name: azure-keyvault-secret
-          key: AZURE_CLIENT_SECRET
-    - name: AZURE_TENANT_ID
-      valueFrom:
-        secretKeyRef:
-          name: azure-keyvault-secret
-          key: AZURE_TENANT_ID
+          name: em-gpt-secret
+          key: azure_endpoint
 
 # Health probes configuration
 probes:
