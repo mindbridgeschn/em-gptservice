@@ -80,7 +80,7 @@ restartPolicy:
 
 # Environment variables
 env:
-  enabled: true
+  enabled: false
   variables:
     - name: uuid
       valueFrom:
