@@ -162,17 +162,12 @@ affinity:
   enabled: false
   config: {}
 
-# Tolerations for pod assignment  <-- UPDATED
 tolerations:
   enabled: true
   tolerations:
-    - key: "kubernetes.azure.com/scalesetpriority"
-      operator: "Equal"
-      value: "spot"
-      effect: "NoSchedule"
     - key: "workload"
       operator: "Equal"
-      value: "spotworkload"
+      value: "userworkload"
       effect: "NoSchedule"
 
 # Service account configuration
