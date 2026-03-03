@@ -213,7 +213,7 @@ ingress:
     nginx.ingress.kubernetes.io/app-root: /docs
 
   hosts:
-    - host: stageem.gt.innoura.com
+    - host: emcodeai.gt.oncoauth.com
       paths:
         - path: /
           pathType: Prefix
@@ -222,7 +222,7 @@ ingress:
             port: 8000
   tls:
     - hosts:
-        - stageem.gt.innoura.com
+        - emcodeai.gt.oncoauth.com
       secretName: stage-em-gpt
 
 # Pod Disruption Budget
