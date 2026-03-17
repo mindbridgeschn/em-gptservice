@@ -1,6 +1,7 @@
 import os
 import logging
 import time
+import asyncio
 import requests
 import redis
 from dotenv import load_dotenv
@@ -8,9 +9,9 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from api.ocr import enqueue_task as enqueue_ocr_task, get_result as get_ocr_result
-from api.ocr import ocr_worker_status, flush_ocr_redis
-from api.miner_viewer import (
+from api.ocr_searchable import enqueue_task as enqueue_ocr_task, get_result as get_ocr_result
+from api.ocr_searchable import ocr_worker_status, flush_ocr_redis
+from api.ocr_text import (
     enqueue_task_miner,
     get_result_miner,
     worker_status as miner_worker_status,
@@ -225,7 +226,7 @@ async def cpt_endpoint(req: CptRequest):
         raise
 
 from api.em import em_worker_status, get_em_result, get_em_queue_items
-from api.ocr import ocr_worker_status, get_ocr_queue_items
+from api.ocr_searchable import ocr_worker_status, get_ocr_queue_items
 
 @app.get("/emWorkerStatus")
 def em_worker_status_route():
@@ -689,8 +690,38 @@ async def cpt_engine(payload:CPT_rule_prompt):
     text=payload.chart
     prompt=payload.prompt
     return await cpt_coder(text,prompt,payload.patientId)
+# ==================== TEST ENDPOINT ====================
+from services.hcpcs.hcpcs import get_hcpcs
+from services.icd.icd import get_icd
+from services.mdm.mdm import get_mdm
+from api.gliner_pii import pii_ai_demo
 
+class TestChartRequest(BaseModel):
+    text: str = Field(..., min_length=1)
+    patientId: str = "TEST"
 
+@app.post("/test_chart")
+async def test_chart(req: TestChartRequest):
+    """Test endpoint — pass raw chart text, get back mdm, icd, cpt, hcpcs, demo results."""
+    trace_id = f"test-{req.patientId}"
+    logger.info(f"[API-TEST-CHART] patient={req.patientId} text_length={len(req.text)}")
+
+    mdm_result, icd_result, cpt_result, hcpcs_result, demo_result = await asyncio.gather(
+        get_mdm(req.text, trace_id),
+        get_icd(req.text, trace_id),
+        get_cpt(req.text, trace_id, req.patientId),
+        get_hcpcs(req.text, trace_id),
+        pii_ai_demo(req.text, req.patientId),
+    )
+
+    return {
+        "patientId": req.patientId,
+        "mdm": mdm_result,
+        "icd": icd_result,
+        "cpt": cpt_result,
+        "hcpcs": hcpcs_result,
+        "demo": demo_result,
+    }
 
 
 # ==================== STARTUP ====================4

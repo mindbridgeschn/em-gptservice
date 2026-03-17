@@ -9,19 +9,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
-logger = logging.getLogger("ocr-worker")
+logger = logging.getLogger(__name__)
 
 # Redis settings
 def _make_redis_client() -> redis.Redis:
     raw_port = os.getenv("REDIS_PORT", "6379")
-    print(raw_port)
-    print(os.getenv("REDIS_HOST", "redis"))
     if "://" in raw_port:
         raw_port = raw_port.split(":")[-1]
-    redis_client = redis.Redis(host=os.getenv("REDIS_HOST", "redis"),port=int(raw_port),password=os.getenv("REDIS_PASSWORD"),ssl=os.getenv("REDIS_SSL", "false").lower() == "true", decode_responses=True )
-    #redis_client = redis.Redis(host="localhost", port=6379, decode_responses=True)
-    return redis_client
+    return redis.Redis(
+        host=os.getenv("REDIS_HOST", "redis"),
+        port=int(raw_port),
+        password=os.getenv("REDIS_PASSWORD"),
+        ssl=os.getenv("REDIS_SSL", "false").lower() == "true",
+        decode_responses=True,
+    )
 
 redis_client = _make_redis_client()
 logger.info("[OCR-REDIS-CONNECT] Connected to Redis OCR")
@@ -199,7 +200,8 @@ def process_one_task(task: dict):
         "traceDto": task.get("traceDto", {}),
     }
 
-    logger.info(f"[OCR-ENGINE-REQUEST] patient={pid} url={OCR_URL} Sending to OCR engine payload={json.dumps(ocr_payload)}")
+    logger.info(f"[OCR-ENGINE-REQUEST] patient={pid} url={OCR_URL}")
+    logger.debug(f"[OCR-ENGINE-REQUEST] patient={pid} payload={json.dumps(ocr_payload)}")
     # OCR call
     ocr_resp = post_with_retry(OCR_URL, ocr_payload, patient_id=pid)
     ocr_data = ocr_resp.json()
@@ -233,8 +235,7 @@ def process_one_task(task: dict):
     }
 
     redis_client.set(f"{RESULT_PREFIX}{pid}", json.dumps(final_data))
-    logger.info(f"[OCR-STORE-SUCCESS] patient={pid} Result saved to Redis key={RESULT_PREFIX}{pid}")
-    logger.info(f"[OCR-PROCESS-DONE] patient={pid} OCR processing completed")
+    logger.info(f"[OCR-PROCESS-DONE] patient={pid} Result saved to Redis key={RESULT_PREFIX}{pid}")
 
 def worker_loop():
     logger.info("[OCR-WORKER-START] OCR Worker Online — STRICT FIFO MODE")

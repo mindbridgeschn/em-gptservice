@@ -58,11 +58,11 @@ def icd_remote(text, trace):   return asyncio.run(get_icd(text, trace))
 @ray.remote
 def demo_remote(text,patientId): return asyncio.run(pii_ai_demo(text, patientId))
 
-#@ray.remote
-#def cpt_remote(text, trace, patientId):   return asyncio.run(get_cpt(text, trace, patientId))
+@ray.remote
+def cpt_remote(text, trace, patientId):   return asyncio.run(get_cpt(text, trace, patientId))
 
-#@ray.remote
-#def hcpcs_remote(text, trace): return asyncio.run(get_hcpcs(text, trace))
+@ray.remote
+def hcpcs_remote(text, trace): return asyncio.run(get_hcpcs(text, trace))
 
 
 def enqueue_em_task(task: dict):
@@ -219,39 +219,32 @@ async def process_one_em_async(task: dict):
     trace_dto = task.get("traceDto", {})
     trace_id = trace_dto.get("traceId", "") if trace_dto else ""
 
-    logger.info(f"[EM-PROCESS-START] patient={pid} Starting medical extraction {task}")
-    logger.info(f"[EM-PROCESS-TEXT] patient={pid} text_length={len(text)} text_preview={text[:100]}")
-    logger.info(f"[EM-PROCESS-RAY] patient={pid} trace={trace_id} Starting Ray remote tasks")
+    logger.info("[EM-PROCESS] Started patient=%s trace=%s text_len=%d", pid, trace_id, len(text))
     
     # Add traceDto info to current span if available
     current_span = trace.get_current_span()
     if current_span and trace_dto:
         add_trace_dto_to_span(current_span, trace_dto)
     
-    #mdm_f, icd_f, cpt_f, hcpcs_f = await asyncio.gather(
-    #    mdm_remote.remote(text, trace_id),
-    #    icd_remote.remote(text, trace_id),
-    #    cpt_remote.remote(text, trace_id, pid),
-    #    hcpcs_remote.remote(text, trace_id),
-    #)
-    mdm_f, icd_f,demo_f = await asyncio.gather(
+    mdm_f, icd_f, cpt_f, hcpcs_f, demo_f = await asyncio.gather(
         mdm_remote.remote(text, trace_id),
         icd_remote.remote(text, trace_id),
-        demo_remote.remote(text,pid)
-
+        cpt_remote.remote(text, trace_id, pid),
+        hcpcs_remote.remote(text, trace_id),
+        demo_remote.remote(text, pid),
     )
 
-    logger.info(f"[EM-PROCESS-RAY-DONE] patient={pid} All Ray tasks completed")
+    logger.info("[EM-PROCESS] All services completed patient=%s", pid)
 
     final_payload = {
         "patientId": pid,
-        "demoResponse":demo_f,
+        "demoResponse": demo_f,
         "procedureMapping": {
             "source_data": {
                 "icd_data": icd_f,
                 "cpt_data": {
-                    "all_cpt_list": [],
-                    "hcpec_list": {},
+                    "all_cpt_list": cpt_f,
+                    "hcpcs_list": hcpcs_f,
                 }
             },
             "mapping": {
@@ -262,8 +255,8 @@ async def process_one_em_async(task: dict):
         "medicalEvaluation": mdm_f,
         "traceDto": task.get("traceDto", {}),
     }
-    logger.info(f"[EM-PROCESS-DONE] patient={pid} Medical extraction completed")
-    logger.info(f"[EM-PROCESS-RESULT] patient={pid} result={json.dumps(final_payload, indent=2)}")
+    logger.info("[EM-PROCESS] Completed patient=%s", pid)
+    logger.debug("[EM-PROCESS] Result patient=%s payload=%s", pid, json.dumps(final_payload, indent=2))
     return final_payload
 
 
@@ -291,8 +284,7 @@ def process_one_em(task: dict):
         raise
 
     try:
-        logger.info(f"[EM-SEND-START] patient={pid} url={SEND_URL} Sending result to backend")
-        logger.info(f"[EM-Debug] patient={pid} result {result} header {header}")
+        logger.info("[EM-SEND] Sending result patient=%s url=%s", pid, SEND_URL)
         resp = post_with_retry(
             SEND_URL,
             result,

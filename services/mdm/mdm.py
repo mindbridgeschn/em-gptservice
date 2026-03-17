@@ -10,7 +10,6 @@ from services.mdm.visitprompt import  prompt as visitprompt
 
 load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 async def json_clean(text):
@@ -53,9 +52,8 @@ def finallevel_calculator(table1_level, table2_level, table3_level):
     return levels[1]
 
 def answeroutput(table1, table2, table3):
-    logger.info(f"Table 1 Level : {table1['MDM_Complexity_Level']['Level']}")
-    logger.info(f"Table 2 Level : {table2['data_level']}")
-    logger.info(f"Table 3 Level : {table3['risk_level']}")
+    logger.info("[MDM] Intermediate levels A=%s B=%s C=%s",
+        table1['MDM_Complexity_Level']['Level'], table2['data_level'], table3['risk_level'])
 
     acute = table1.get('acute', [])
     chronic = table1.get('chronic', [])
@@ -163,37 +161,14 @@ def final_return(
     valueOrder = bool(order_count)
     pre_drug = C.get("Prescription drug management") == "yes"
 
-    if "Inpatient".lower()==visitType.get("visit_type","").lower():
-        logger.info(f"Inpatient visitType ")
-        cpt_code=visitType.get("cpt_code")
-   
-    elif "Emergency".lower()==visitType.get("visit_type","").lower():
-        logger.info(f"Emergency visitType ")
-        cpt_code=visitType.get("cpt_code")
+    visit_type = visitType.get("visit_type", "").lower()
+    override_types = {"inpatient", "emergency", "consult", "preventive", "telehealth", "facility", "critical"}
 
-    elif "Consult".lower()==visitType.get("visit_type","").lower():
-        logger.info(f"Consult visitType ")
-        cpt_code=visitType.get("cpt_code")
-
-    elif "Preventive".lower()==visitType.get("visit_type","").lower():
-        logger.info(f"Preventive visitType ")
-        cpt_code=visitType.get("cpt_code")
-
-    elif "Telehealth".lower()==visitType.get("visit_type","").lower():
-        logger.info(f"Telehealth visitType ")
-        cpt_code=visitType.get("cpt_code")
-
-    elif "Facility".lower()==visitType.get("visit_type","").lower():
-        logger.info(f"Facility visitType ")
-        cpt_code=visitType.get("cpt_code")
-
-    elif "Critical".lower()==visitType.get("visit_type","").lower():
-        logger.info(f"Critical visitType ")
-        cpt_code=visitType.get("cpt_code")
-    
+    if visit_type in override_types:
+        cpt_code = visitType.get("cpt_code")
+        logger.info("[MDM] Visit type override visit_type=%s cpt_code=%s", visit_type, cpt_code)
     else:
-        logger.info(f"Office visitType ")
-        cpt_code=cpt_code
+        logger.info("[MDM] Office visit type, using calculated cpt_code=%s", cpt_code)
 
     output={
         "finalLevel": finallevel,
@@ -245,7 +220,7 @@ def final_return(
             ]
         }
     }
-    logger.info(f"Final Output {output}")
+    logger.info("[MDM] Final output level=%s cpt_code=%s patient_type=%s", output.get("finalLevel"), output.get("cptCode"), output.get("patientType"))
     return output
 import asyncio
 
@@ -255,11 +230,11 @@ async def safe_ai_call(text, prompt,timeout=600):
             ai_call(text, prompt),timeout=timeout
         )
     except asyncio.TimeoutError:
-        logger.error("QWEN timeout")
+        logger.error("[MDM] AI call timed out after %ds", timeout)
         raise
 
 async def output(text: str, trace_id: str) -> dict:
-    logger.info(f"[QWEN]AI for send -> to ai MDM{trace_id}")
+    logger.info("[MDM] Processing started trace_id=%s", trace_id)
 
     visitType, tab_1_raw, tab_2_raw, tab_3_raw = await asyncio.gather(
     safe_ai_call(text,visitprompt),
@@ -267,7 +242,7 @@ async def output(text: str, trace_id: str) -> dict:
     safe_ai_call(text, Tab_2),
     safe_ai_call(text, Tab_3),
 )
-    logger.info(f"[QWEN]AI for Income{trace_id}")
+    logger.info("[MDM] All AI calls completed trace_id=%s", trace_id)
 
     try:
         tab_1_json, _ = await json_clean(tab_1_raw)
@@ -310,7 +285,7 @@ async def output(text: str, trace_id: str) -> dict:
         visitType_json
     )
 
-    logger.info(f"MDM full final output for trace_id {trace_id}")
+    logger.info("[MDM] Processing completed trace_id=%s", trace_id)
     return final_output
 
 async def get_mdm(text, trace_id: str):

@@ -80,18 +80,70 @@ restartPolicy:
 
 # Environment variables
 env:
-  enabled: false
+  enabled: true
   variables:
-    - name: uuid
+    # --- Secrets (from Kubernetes Secret) ---
+    - name: AZURE_API_KEY
       valueFrom:
         secretKeyRef:
           name: em-gpt-secret
-          key: uuid
+          key: AZURE_API_KEY
     - name: azure_endpoint
       valueFrom:
         secretKeyRef:
           name: em-gpt-secret
           key: azure_endpoint
+    - name: REDIS_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: em-gpt-secret
+          key: REDIS_PASSWORD
+    - name: API_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: em-gpt-secret
+          key: API_TOKEN
+    # --- Redis ---
+    - name: REDIS_HOST
+      value: "redis"
+    - name: REDIS_PORT
+      value: "6379"
+    - name: REDIS_SSL
+      value: "false"
+    - name: REDIS_TTL
+      value: "36000"
+    # --- EM Worker ---
+    - name: SEND
+      value: "http://backend-service:8085/em/test/single-format/ai-response"
+    # --- OCR Searchable ---
+    - name: OCR_URL
+      value: "https://stage.rustocr.innoura.com/convert-upload"
+    - name: OCR_BACKEND_URL
+      value: "http://backend-service:8085/em/ocr-response"
+    # --- OCR Text Pipeline ---
+    - name: OCR_ENGINE_URL
+      value: "https://emcodeai.ocr.oncoauth.com/ocr"
+    - name: OCR_STATUS_URL
+      value: ""
+    - name: DEMO_URL
+      value: ""
+    - name: ADD_TASK_URL
+      value: ""
+    # --- Demo / PII ---
+    - name: DEMO_URL_BACKEND
+      value: "http://backend-service:8085/em/demo-response"
+    # --- Telemetry ---
+    - name: OTEL_SERVICE_NAME
+      value: "em-worker"
+    - name: OTEL_TRACES_EXPORTER
+      value: "otlp"
+    # --- Startup ---
+    - name: FLUSH_REDIS_ON_STARTUP
+      value: "false"
+    - name: FLUSH_EM_ON_STARTUP
+      value: "false"
+    - name: FLUSH_OCR_ON_STARTUP
+      value: "false"
 
 # Health probes configuration
 probes:
