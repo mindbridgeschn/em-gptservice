@@ -93,17 +93,6 @@ env:
         secretKeyRef:
           name: em-gpt-secret
           key: azure_endpoint
-    - name: REDIS_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: em-gpt-secret
-          key: REDIS_PASSWORD
-    - name: API_TOKEN
-      valueFrom:
-        secretKeyRef:
-          name: em-gpt-secret
-          key: API_TOKEN
-    # --- Redis ---
     - name: REDIS_HOST
       value: "redis"
     - name: REDIS_PORT
@@ -123,12 +112,6 @@ env:
     # --- OCR Text Pipeline ---
     - name: OCR_ENGINE_URL
       value: "https://emcodeai.ocr.oncoauth.com/ocr"
-    - name: OCR_STATUS_URL
-      value: ""
-    - name: DEMO_URL
-      value: ""
-    - name: ADD_TASK_URL
-      value: ""
     # --- Demo / PII ---
     - name: DEMO_URL_BACKEND
       value: "http://backend-service:8085/em/demo-response"
